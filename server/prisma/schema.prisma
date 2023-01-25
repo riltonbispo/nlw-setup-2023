@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator erd {
+  provider = "prisma-erd-generator"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Habit {
+  id         String   @id @default(uuid())
+  title      String
+  created_at DateTime
+
+  dayHabits DayHabit[]
+  weekDays  HabitWeekDays[]
+
+  @@map("habits")
+}
+
+model HabitWeekDays {
+  id       String @id @default(uuid())
+  habit_id String
+  week_day Int
+
+  habit Habit @relation(fields: [habit_id], references: [id])
+
+  @@unique([habit_id, week_day])
+  @@map("habit_week_days")
+}
+
+model Day {
+  id   String   @id @default(uuid())
+  date DateTime // so vai ter registro se tiver completado pelomones um habito
+
+  dayHabits DayHabit[]
+
+  @@unique([date]) // indica que os dias tem que unico
+  @@map("days")
+}
+
+// em um relacionamento n para n, sempre gera uma tabela pivo:
+model DayHabit {
+  id String @id @default(uuid())
+
+  day_id   String
+  habit_id String
+
+  // cria a relação entre tabelas
+  day   Day   @relation(fields: [day_id], references: [id])
+  habit Habit @relation(fields: [habit_id], references: [id])
+
+  @@unique([day_id, habit_id]) // nao mode completar o habito 2x 
+  @@map("day_habits")
+}
